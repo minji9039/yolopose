@@ -1,21 +1,6 @@
 import os
 import cv2
-try:
-    import mediapipe as mp
-    mp_pose = mp.solutions.pose
-except AttributeError:
-import os
-import cv2
 import mediapipe as mp
-import math
-import time
-import csv
-import numpy as np
-import streamlit as st
-from datetime import datetime
-from PIL import ImageFont, ImageDraw, Image
-from ultralytics import YOLO
-from streamlit_webrtc import webrtc_streamer, VideoProcessorBase
 import math
 import time
 import csv
