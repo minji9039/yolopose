@@ -20,6 +20,9 @@ from av import VideoFrame
 MAX_WORKERS = 3
 WARMUP_SECONDS = 8.0
 
+EVALUATION_WINDOW_SECONDS = 20 * 60
+RISK_LIMIT_SECONDS = 5 * 60
+
 WAIST_HOLD_SECONDS = 1.0
 NECK_HOLD_SECONDS = 2.0
 KNEE_HOLD_SECONDS = 1.0
@@ -148,16 +151,6 @@ def classify_waist_risk(angle, valid=True):
     return "안전", GREEN
 
 
-def classify_neck_risk(angle, valid=True):
-    if not valid or angle is None:
-        return "보류", GRAY
-    if angle >= 45:
-        return "위험", RED
-    elif angle >= 20:
-        return "주의", YELLOW
-    return "안전", GREEN
-
-
 def classify_knee_risk(angle, valid=True):
     if not valid or angle is None:
         return "보류", GRAY
@@ -197,14 +190,11 @@ def get_overall_risk(risks):
     return "안전", GREEN
 
 
-def get_simple_reba_score(waist, neck, knee, shoulder, wv=True, nv=True, kv=True, sv=True):
+def get_simple_reba_score(waist, knee, shoulder, wv=True, kv=True, sv=True):
     score = 0
 
     if wv and waist is not None:
         score += 1 if waist < 20 else (2 if waist < 60 else 3)
-
-    if nv and neck is not None:
-        score += 1 if neck < 20 else (2 if neck < 45 else 3)
 
     if kv and knee is not None:
         score += 1 if knee < 30 else (2 if knee < 60 else 3)
@@ -305,15 +295,6 @@ def calculate_body_angles(landmarks, crop_w, crop_h, offset_x, offset_y):
         trunk_vec = (sh_mid[0] - hip_mid[0], sh_mid[1] - hip_mid[1])
         waist_angle = angle_between_vectors(trunk_vec, (0, -1))
         waist_valid = waist_angle is not None
-
-    # 목 각도: 어깨-코 벡터가 수직축에서 얼마나 벗어나는지
-    neck_angle = None
-    neck_valid = False
-
-    if valid_point(sh_mid) and valid_point(nose):
-        neck_vec = (nose[0] - sh_mid[0], nose[1] - sh_mid[1])
-        neck_angle = angle_between_vectors(neck_vec, (0, -1))
-        neck_valid = neck_angle is not None
 
     # 무릎 굽힘 각도: 180도에서 실제 무릎각을 빼서 굽힘 정도로 변환
     knee_values = []
@@ -526,18 +507,15 @@ class PoseProcessor(VideoProcessorBase):
                         wid,
                         tr["active"],
                         None if tr["waist_angle"] is None else round(tr["waist_angle"], 2),
-                        None if tr["neck_angle"] is None else round(tr["neck_angle"], 2),
                         None if tr["knee_angle"] is None else round(tr["knee_angle"], 2),
                         None if tr["shoulder_angle"] is None else round(tr["shoulder_angle"], 2),
                         tr["waist_risk"],
-                        tr["neck_risk"],
                         tr["knee_risk"],
                         tr["shoulder_risk"],
                         tr["reba_score"],
                         tr["reba_level"],
                         tr["work_type"],
                         round(tr["waist_time"], 2),
-                        round(tr["neck_time"], 2),
                         round(tr["knee_time"], 2),
                         round(tr["shoulder_time"], 2),
                         tr["overall_risk"]
@@ -594,12 +572,11 @@ class PoseProcessor(VideoProcessorBase):
     def update_hold_and_time(self, tr, dt, is_warmup):
         hold_map = {
             "waist": WAIST_HOLD_SECONDS,
-            "neck": NECK_HOLD_SECONDS,
             "knee": KNEE_HOLD_SECONDS,
             "shoulder": SHOULDER_HOLD_SECONDS
         }
 
-        for part in ["waist", "neck", "knee", "shoulder"]:
+        for part in ["waist", "knee", "shoulder"]:
             risk_key = f"{part}_risk"
             hold_key = f"{part}_hold"
             time_key = f"{part}_time"
@@ -716,11 +693,9 @@ class PoseProcessor(VideoProcessorBase):
 
                     tr["reba_score"] = get_simple_reba_score(
                         tr["waist_angle"],
-                        tr["neck_angle"],
                         tr["knee_angle"],
                         tr["shoulder_angle"],
                         tr["waist_valid"],
-                        tr["neck_valid"],
                         tr["knee_valid"],
                         tr["shoulder_valid"]
                     )
@@ -841,13 +816,11 @@ class PoseProcessor(VideoProcessorBase):
                 dashboard = draw_panel(dashboard, BOTTOM_X, BOTTOM_Y, BOTTOM_W, BOTTOM_H, "신체부위별 누적 위험시간")
 
                 total_waist = sum(tr["waist_time"] for tr in self.tracks.values())
-                total_neck = sum(tr["neck_time"] for tr in self.tracks.values())
                 total_knee = sum(tr["knee_time"] for tr in self.tracks.values())
                 total_shoulder = sum(tr["shoulder_time"] for tr in self.tracks.values())
 
                 totals = [
                     ("허리", total_waist, RED),
-                    ("목", total_neck, ORANGE),
                     ("무릎", total_knee, YELLOW),
                     ("어깨", total_shoulder, BLUE)
                 ]
@@ -855,12 +828,36 @@ class PoseProcessor(VideoProcessorBase):
                 bx = BOTTOM_X + 30
                 by = BOTTOM_Y + 58
 
-                max_time = max([t[1] for t in totals] + [1.0])
+                dashboard = draw_korean_text(
+                    dashboard,
+                    "기준: 20분 중 위험자세 누적 5분 초과 시 위험",
+                    (BOTTOM_X + 20, BOTTOM_Y + 30),
+                    14,
+                    GRAY
+                )
 
                 for name, value, color in totals:
-                    dashboard = draw_korean_text(dashboard, f"{name}: {value:.1f}s", (bx, by - 25), 15, WHITE)
-                    dashboard = draw_progress_bar(dashboard, bx, by, 250, 18, value / max_time * 100, color)
-                    bx += 300
+                    percent = min(value / RISK_LIMIT_SECONDS * 100, 100)
+
+                    dashboard = draw_korean_text(
+                        dashboard,
+                        f"{name}: {value:.1f}s / {RISK_LIMIT_SECONDS:.0f}s ({percent:.1f}%)",
+                        (bx, by - 20),
+                        14,
+                        WHITE
+                    )
+
+                    dashboard = draw_progress_bar(
+                        dashboard,
+                        bx,
+                        by,
+                        300,
+                        18,
+                        percent,
+                        color
+                    )
+
+                    bx += 400
 
                 return VideoFrame.from_ndarray(dashboard, format="bgr24")
 
