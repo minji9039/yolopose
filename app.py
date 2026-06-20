@@ -153,28 +153,12 @@ yolo_model, pose_model = load_models()
 
 class PoseProcessor(VideoProcessorBase):
     def __init__(self):
-        self.tracks = {}
-        for i in range(1, MAX_WORKERS + 1):
-            self.tracks[f"W{i:02d}"] = {
-                "active": False, "center": None, "last_seen": 0, "last_valid_pose_time": 0,
-                "waist_angle": 0.0, "neck_angle": 0.0, "knee_angle": 0.0, "shoulder_angle": 0.0,
-                "waist_valid": False, "neck_valid": False, "knee_valid": False, "shoulder_valid": False,
-                "waist_risk_display": "보류", "neck_risk_display": "보류", "knee_risk_display": "보류", "shoulder_risk_display": "보류",
-                "waist_risk_record": "보류", "neck_risk_record": "보류", "knee_risk_record": "보류", "shoulder_risk_record": "보류",
-                "overall_risk": "미인식", "overall_color": GRAY,
-                "waist_time": 0.0, "neck_time": 0.0, "knee_time": 0.0, "shoulder_time": 0.0,
-                "waist_risky_time": 0.0, "neck_risky_time": 0.0, "knee_risky_time": 0.0, "shoulder_risky_time": 0.0,
-                "waist_hold": 0.0, "neck_hold": 0.0, "knee_hold": 0.0, "shoulder_hold": 0.0,
-                "pose_status": "미인식", "body_status": "미인식",
-                "reba_score": 0, "reba_level": "보류", "reba_color": GRAY, "work_type": "일반 자세"
-            }
-        self.start_time = time.time()
-        self.prev_time = self.start_time
-        self.frame_number = 0
-        
-        # 외부 UI에서 상태값을 받아옵니다.
-        self.run_mode = "평가모드"
-        self.experiment_condition = "조건 미설정"
+        ...
+
+    def recv(self, frame):
+        img = frame.to_ndarray(format="bgr24")
+        img = cv2.flip(img, 1)
+        return VideoFrame.from_ndarray(img, format="bgr24")
 
     def assign_worker_ids(self, person_boxes, current_time):
         assignments, used_ids, detections = [], set(), []
@@ -293,12 +277,17 @@ with st.sidebar:
 # WebRTC 컴포넌트 실행
 ctx = webrtc_streamer(
     key="yolo-mediapipe-pose",
+    mode=WebRtcMode.SENDRECV,
     video_processor_factory=PoseProcessor,
     rtc_configuration={
         "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
     },
     media_stream_constraints={
-        "video": True,
+        "video": {
+            "width": {"ideal": 640},
+            "height": {"ideal": 480},
+            "frameRate": {"ideal": 15, "max": 30}
+        },
         "audio": False
     },
     async_processing=True
