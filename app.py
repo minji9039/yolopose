@@ -9,7 +9,7 @@ import streamlit as st
 from datetime import datetime
 from PIL import ImageFont, ImageDraw, Image
 from ultralytics import YOLO
-from streamlit_webrtc import webrtc_streamer, VideoProcessorBase
+from streamlit_webrtc import webrtc_streamer, VideoProcessorBase, WebRtcMode
 from av import VideoFrame
 
 # ==========================================
