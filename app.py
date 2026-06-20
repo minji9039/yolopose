@@ -422,13 +422,13 @@ yolo_model = load_yolo_model()
 # ==========================================
 class PoseProcessor(VideoProcessorBase):
     def __init__(self):
-        self.pose_model = mp.solutions.pose.Pose(
-            static_image_mode=False,
-            model_complexity=0,
-            smooth_landmarks=True,
-            min_detection_confidence=0.5,
-            min_tracking_confidence=0.5
-        )
+   self.pose_model = mp.solutions.pose.Pose(
+    static_image_mode=False,
+    model_complexity=1,
+    smooth_landmarks=True,
+    min_detection_confidence=0.5,
+    min_tracking_confidence=0.5
+)
 
         self.tracks = {}
         for i in range(1, MAX_WORKERS + 1):
