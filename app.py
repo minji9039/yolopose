@@ -716,7 +716,7 @@ class PoseProcessor(VideoProcessorBase):
                 self.last_csv_time = current_time
 
             # 발표모드 대시보드
-            if self.run_mode == "발표모드":
+            if self.run_mode == "점검모드":
                 dashboard = np.zeros((DASHBOARD_H, DASHBOARD_W, 3), dtype=np.uint8)
                 dashboard[:] = BG
 
@@ -866,7 +866,7 @@ with st.sidebar:
 
     selected_mode = st.selectbox(
         "실행 모드",
-        ["발표모드", "평가모드"],
+        ["점검모드", "평가모드"],
         index=0
     )
 
@@ -878,7 +878,7 @@ with st.sidebar:
 
     st.markdown("---")
     st.write("📌 **안내사항**")
-    st.write("- **발표모드:** 전체 대시보드 UI가 표시됩니다.")
+    st.write("- **점검모드:** 전체 대시보드 UI가 표시됩니다.")
     st.write("- **평가모드:** 대시보드 없이 영상 화면만 표시됩니다.")
     st.write("- 처음 8초는 초기 안정화 시간입니다.")
     st.write("- 결과 데이터는 서버의 임시 CSV로 기록됩니다.")
