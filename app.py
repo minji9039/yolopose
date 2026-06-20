@@ -10,6 +10,7 @@ from datetime import datetime
 from PIL import ImageFont, ImageDraw, Image
 from ultralytics import YOLO
 from streamlit_webrtc import webrtc_streamer, VideoProcessorBase
+from av import VideoFrame
 
 # ==========================================
 # 1. 전역 설정 및 상수
@@ -266,10 +267,10 @@ class PoseProcessor(VideoProcessorBase):
             status_text = f"조건: {self.experiment_condition} | 초기 안정화 중 {max(0, WARMUP_SECONDS - elapsed_time):.1f}초" if is_warmup else f"조건: {self.experiment_condition} | 실시간 분석 중"
             dashboard = draw_korean_text(dashboard, status_text, (VIDEO_X + 14, VIDEO_Y + 6), 16, YELLOW if is_warmup else WHITE)
 
-            return frame.from_ndarray(dashboard, format="bgr24")
+            return Videoframe.from_ndarray(dashboard, format="bgr24")
         else:
             # 평가모드: 원본 비디오에 박스만 오버레이
-            return frame.from_ndarray(video_frame, format="bgr24")
+            return Videoframe.from_ndarray(video_frame, format="bgr24")
 
 # ==========================================
 # 5. Streamlit 웹페이지 UI 세팅
@@ -293,7 +294,14 @@ with st.sidebar:
 ctx = webrtc_streamer(
     key="yolo-mediapipe-pose",
     video_processor_factory=PoseProcessor,
-    rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+    rtc_configuration={
+        "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
+    },
+    media_stream_constraints={
+        "video": True,
+        "audio": False
+    },
+    async_processing=True
 )
 
 # 사이드바의 설정값을 WebRTC 프로세서에 실시간으로 전달
