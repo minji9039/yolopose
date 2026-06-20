@@ -4,7 +4,18 @@ try:
     import mediapipe as mp
     mp_pose = mp.solutions.pose
 except AttributeError:
-    from mediapipe.python.solutions import pose as mp_pose
+import os
+import cv2
+import mediapipe as mp
+import math
+import time
+import csv
+import numpy as np
+import streamlit as st
+from datetime import datetime
+from PIL import ImageFont, ImageDraw, Image
+from ultralytics import YOLO
+from streamlit_webrtc import webrtc_streamer, VideoProcessorBase
 import math
 import time
 import csv
@@ -146,7 +157,7 @@ def classify_owas_work_type(waist, neck, knee, shoulder, wv=True, nv=True, kv=Tr
 @st.cache_resource
 def load_models():
     yolo = YOLO("yolov8n.pt")
-    pose = mp_pose.Pose(
+    pose = mp.solutions.pose.Pose(
         min_detection_confidence=0.5,
         min_tracking_confidence=0.5
     )
