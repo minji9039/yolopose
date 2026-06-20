@@ -902,3 +902,14 @@ ctx = webrtc_streamer(
 if ctx.video_processor:
     ctx.video_processor.run_mode = selected_mode
     ctx.video_processor.experiment_condition = selected_condition
+
+    csv_path = ctx.video_processor.csv_path
+
+    if os.path.exists(csv_path):
+        with open(csv_path, "rb") as file:
+            st.sidebar.download_button(
+                label="CSV 결과 다운로드",
+                data=file,
+                file_name=os.path.basename(csv_path),
+                mime="text/csv"
+            )
