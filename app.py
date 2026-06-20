@@ -24,7 +24,6 @@ EVALUATION_WINDOW_SECONDS = 20 * 60
 RISK_LIMIT_SECONDS = 5 * 60
 
 WAIST_HOLD_SECONDS = 1.0
-NECK_HOLD_SECONDS = 2.0
 KNEE_HOLD_SECONDS = 1.0
 SHOULDER_HOLD_SECONDS = 2.0
 
@@ -346,11 +345,9 @@ def calculate_body_angles(landmarks, crop_w, crop_h, offset_x, offset_y):
 
     return {
         "waist": waist_angle,
-        "neck": neck_angle,
         "knee": knee_angle,
         "shoulder": shoulder_angle,
         "waist_valid": waist_valid,
-        "neck_valid": neck_valid,
         "knee_valid": knee_valid,
         "shoulder_valid": shoulder_valid,
         "points": points
@@ -433,27 +430,22 @@ class PoseProcessor(VideoProcessorBase):
             "last_seen": 0,
 
             "waist_angle": None,
-            "neck_angle": None,
             "knee_angle": None,
             "shoulder_angle": None,
 
             "waist_valid": False,
-            "neck_valid": False,
             "knee_valid": False,
             "shoulder_valid": False,
 
             "waist_risk": "보류",
-            "neck_risk": "보류",
             "knee_risk": "보류",
             "shoulder_risk": "보류",
 
             "waist_hold": 0.0,
-            "neck_hold": 0.0,
             "knee_hold": 0.0,
             "shoulder_hold": 0.0,
 
             "waist_time": 0.0,
-            "neck_time": 0.0,
             "knee_time": 0.0,
             "shoulder_time": 0.0,
 
@@ -476,18 +468,15 @@ class PoseProcessor(VideoProcessorBase):
                     "worker_id",
                     "active",
                     "waist",
-                    "neck",
                     "knee",
                     "shoulder",
                     "waist_risk",
-                    "neck_risk",
                     "knee_risk",
                     "shoulder_risk",
                     "reba",
                     "reba_level",
                     "work_type",
                     "waist_time",
-                    "neck_time",
                     "knee_time",
                     "shoulder_time",
                     "overall"
@@ -657,33 +646,27 @@ class PoseProcessor(VideoProcessorBase):
                     angle_data = calculate_body_angles(landmarks, crop_w, crop_h, x1p, y1p)
 
                     waist = angle_data["waist"]
-                    neck = angle_data["neck"]
                     knee = angle_data["knee"]
                     shoulder = angle_data["shoulder"]
 
                     tr["waist_angle"] = smooth_value(tr["waist_angle"], waist)
-                    tr["neck_angle"] = smooth_value(tr["neck_angle"], neck)
                     tr["knee_angle"] = smooth_value(tr["knee_angle"], knee)
                     tr["shoulder_angle"] = smooth_value(tr["shoulder_angle"], shoulder)
 
                     tr["waist_valid"] = angle_data["waist_valid"]
-                    tr["neck_valid"] = angle_data["neck_valid"]
                     tr["knee_valid"] = angle_data["knee_valid"]
                     tr["shoulder_valid"] = angle_data["shoulder_valid"]
 
                     waist_risk, waist_color = classify_waist_risk(tr["waist_angle"], tr["waist_valid"])
-                    neck_risk, neck_color = classify_neck_risk(tr["neck_angle"], tr["neck_valid"])
                     knee_risk, knee_color = classify_knee_risk(tr["knee_angle"], tr["knee_valid"])
                     shoulder_risk, shoulder_color = classify_shoulder_risk(tr["shoulder_angle"], tr["shoulder_valid"])
 
                     tr["waist_risk"] = waist_risk
-                    tr["neck_risk"] = neck_risk
                     tr["knee_risk"] = knee_risk
                     tr["shoulder_risk"] = shoulder_risk
 
                     overall, overall_color = get_overall_risk([
                         waist_risk,
-                        neck_risk,
                         knee_risk,
                         shoulder_risk
                     ])
