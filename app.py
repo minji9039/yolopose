@@ -722,13 +722,12 @@ class PoseProcessor(VideoProcessorBase):
 
                 cv2.rectangle(dashboard, (0, 0), (DASHBOARD_W, 75), (10, 14, 18), -1)
                 dashboard = draw_korean_text(
-                    dashboard = draw_korean_text(
-                        dashboard,
-                        "건설현장 작업자 자세 위험도 모니터링 시스템",
-                        (145, 20),
-                        26,
-                        WHITE
-                    )
+                     dashboard,
+                     "건설현장 작업자 자세 위험도 모니터링 시스템",
+                     (145, 20),
+                      26,
+                    WHITE
+                   )
 
                 dashboard = draw_panel(
                     dashboard,
