@@ -722,12 +722,13 @@ class PoseProcessor(VideoProcessorBase):
 
                 cv2.rectangle(dashboard, (0, 0), (DASHBOARD_W, 75), (10, 14, 18), -1)
                 dashboard = draw_korean_text(
-                    dashboard,
-                    "작업발판 높이 조정 전·후 위험 자세 비교 시스템",
-                    (170, 20),
-                    26,
-                    WHITE
-                )
+                    dashboard = draw_korean_text(
+                        dashboard,
+                        "건설현장 작업자 자세 위험도 모니터링 시스템",
+                        (145, 20),
+                        26,
+                        WHITE
+                    )
 
                 dashboard = draw_panel(
                     dashboard,
@@ -859,7 +860,7 @@ class PoseProcessor(VideoProcessorBase):
 # 7. Streamlit UI
 # ==========================================
 st.set_page_config(layout="wide", page_title="현장 자세 위험도 분석")
-st.title("건설 현장 작업자 다중 자세 분석")
+st.title("건설현장 작업자 자세 위험도 모니터링 시스템")
 
 with st.sidebar:
     st.header("실험 설정")
